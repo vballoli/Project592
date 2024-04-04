@@ -30,7 +30,7 @@ grad_ac_steps: 1
 clip_grad_max_norm: 2.0
 criterion_class: ce
 criterion_concept: MCBCELoss
-train_class_mode: sequential
+train_class_mode: joint
 use_neg_concept: True
 
 backbone: resnet18
