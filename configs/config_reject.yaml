@@ -54,3 +54,8 @@ use_probabilsitic_concept: True
 
 loss_weight_concept: 1.0
 loss_weight_class: 0.1
+
+# Reject
+classifier_cost: 0.
+expert_cost: 0.
+
