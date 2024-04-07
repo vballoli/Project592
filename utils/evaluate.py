@@ -119,8 +119,9 @@ def compute_metrics(args, all_predictions, all_targets, loss, elapsed,
         avg_tnr = (all_confusion[:, 0] / (all_confusion[:, 0] + all_confusion[:, 1])).mean()
 
     if args.pred_class:
-        s_idx = args.num_concepts if args.pred_concept else 0
-        all_preds_classes = all_predictions[:, s_idx:].clone()
+        # s_idx = args.num_concepts if args.pred_concept else 0
+        s_idx = 0
+        all_preds_classes = all_predictions[:, s_idx:-1].clone()
         all_targets_classes = all_targets[:, s_idx:].clone()
         pred_max_val, pred_max_idx = torch.max(all_preds_classes, 1)
         _, target_max_idx = torch.max(all_targets_classes, 1)
