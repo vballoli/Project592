@@ -40,7 +40,7 @@ if args.dataset == 'cub':
 args.group2concept = group2concept
 
 from torchvision.models.resnet import resnet18
-model = CBM(resnet18(pretrained=True), 201, 112, 0.2, 0, 'relu')
+model = CBM(resnet18(pretrained=True), 201, 313, 0.2, 0, 'relu')
 
 # print(model)
 

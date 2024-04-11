@@ -1,4 +1,3 @@
-
 import argparse
 import os
 from os.path import join as ospj
@@ -25,7 +24,7 @@ def change2abspath(path):
 def configure_data_type(args):
     if args.dataset == 'cub':
         args.num_classes = 201
-        args.num_concepts = getattr(args, 'num_concepts', 112)
+        args.num_concepts = getattr(args, 'num_concepts', 312)
     elif args.dataset == 'awa2':
         args.num_classes = 50
         args.num_concepts = getattr(args, 'num_concepts', 85 if not args.reduce_concept else 45)
@@ -116,7 +115,7 @@ def configure_config(args):
                 conf_new[k] = getattr(args, k)
         yaml.dump(conf_new, open(os.path.join(args.log_folder, args.config.split('/')[-1]), 'w'), sort_keys=False)
 
-        wandb.save(os.path.join(args.log_folder, args.config.split('/')[-1]))
+        #wandb.save(os.path.join(args.log_folder, args.config.split('/')[-1]))
         
 
 def configure_arguments(args):

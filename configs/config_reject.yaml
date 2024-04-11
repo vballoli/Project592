@@ -17,7 +17,7 @@ drop_prob: 0.3
 log_dir: ./runs
 experiment_name: time_modeltype
 override_cache: False
-log_tool: ['wandb']
+log_tool: []
 
 pred_class: True
 pred_concept: True
@@ -36,7 +36,7 @@ grad_ac_steps: 1
 clip_grad_max_norm: 1.
 criterion_class: ce
 criterion_concept: bce
-train_class_mode: sequential
+train_class_mode: joint
 
 concept_activation: sigmoid
 

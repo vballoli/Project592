@@ -201,6 +201,27 @@ def reject_CrossEntropyLoss(outputs, m, labels, m2, n_classes):
 def run_epoch(args, model, data, optimizer, epoch, desc, device, loss_weight=None, train=False,  warm=False, inference_with_sampling=False, stage='joint', expert_fn=None):
 
 
+    def expert_fn_concept(featureVector,target_label):
+        expert_pred = torch.deepcopy(target_label)
+        prob_falsePos = torch.count_nonzero(target_label)/args.num_concepts
+
+        if torch.rand(1) < 0.7:
+            return target_label
+        else: 
+            return torch.zeros_likes(target_label)
+
+       
+        # for i in range(torch.size(target_label)):
+        #     if target_label[i] == 1:
+        #         if torch.rand(1) < 0.7:
+        #             return y
+        #         else:
+        #             return 99
+
+        #         #If correct label is 1 ...expert 0.7 prob to put 1
+        #         #If correct label is 0 ...expert {number of correct labels}/{total number of labels} prob to put 1                
+
+
 
     if expert_fn is None:
         def f(x, y):
@@ -290,46 +311,83 @@ def run_epoch(args, model, data, optimizer, epoch, desc, device, loss_weight=Non
 
         loss, pred = 0, None
         loss_iter_dict = {}
-        if args.pred_concept:
-            if isinstance(criterion_concept, MCBCELoss):
-                pred_concept = preds_dict['pred_concept_prob']
-                loss_concept, concept_loss_dict = criterion_concept(\
-                    probs=preds_dict['pred_concept_prob'],
-                    image_mean=preds_dict['pred_mean'], image_logsigma=preds_dict['pred_logsigma'],
-                    concept_labels=target_concept, negative_scale=preds_dict['negative_scale'], shift=preds_dict['shift'])
-                if 'pred_concept_uncertainty' in preds_dict.keys():
-                    concept_uncertainty = preds_dict['pred_concept_uncertainty']
-                for k, v in concept_loss_dict.items():
-                    if k != 'loss':
-                        loss_iter_dict['pcme_' + k] = v
-            elif isinstance(criterion_concept, (nn.BCELoss)):
-                pred_concept = preds_dict['pred_concept_prob']
-                loss_concept = criterion_concept(pred_concept, target_concept)
-                if 'pred_concept_uncertainty' in preds_dict.keys():
-                    concept_uncertainty = preds_dict['pred_concept_uncertainty']
-            else:
+        # if args.pred_concept:
+        #     if isinstance(criterion_concept, MCBCELoss):
+        #         pred_concept = preds_dict['pred_concept_prob']
+        #         loss_concept, concept_loss_dict = criterion_concept(\
+        #             probs=preds_dict['pred_concept_prob'],
+        #             image_mean=preds_dict['pred_mean'], image_logsigma=preds_dict['pred_logsigma'],
+        #             concept_labels=target_concept, negative_scale=preds_dict['negative_scale'], shift=preds_dict['shift'])
+        #         if 'pred_concept_uncertainty' in preds_dict.keys():
+        #             concept_uncertainty = preds_dict['pred_concept_uncertainty']
+        #         for k, v in concept_loss_dict.items():
+        #             if k != 'loss':
+        #                 loss_iter_dict['pcme_' + k] = v
+        #     elif isinstance(criterion_concept, (nn.BCELoss)):
+        #         pred_concept = preds_dict['pred_concept_prob']
+        #         loss_concept = criterion_concept(pred_concept, target_concept)
+        #         if 'pred_concept_uncertainty' in preds_dict.keys():
+        #             concept_uncertainty = preds_dict['pred_concept_uncertainty']
+        #     else:
+        #         pred_concept = preds_dict['pred_concept_logit']
+        #         loss_concept = criterion_concept(pred_concept, target_concept)
+        #         pred_concept = torch.sigmoid(pred_concept)
+        #         if 'pred_concept_uncertainty' in preds_dict.keys():
+        #             concept_uncertainty = preds_dict['pred_concept_uncertainty']
+
+        #Concept Loss Calculation
+        #For each image, Each concept category will have a loss calculated.
+        if True:
+            if 'pred_concept_logit' in preds_dict.keys():
                 pred_concept = preds_dict['pred_concept_logit']
-                loss_concept = criterion_concept(pred_concept, target_concept)
-                pred_concept = torch.sigmoid(pred_concept)
-                if 'pred_concept_uncertainty' in preds_dict.keys():
-                    concept_uncertainty = preds_dict['pred_concept_uncertainty']
+            else:
+                assert 'pred_concept_prob' in preds_dict.keys()
+                pred_concept = preds_dict['pred_concept_prob']
+                pred_concept = pred_concept.log()
+
+            m = []
+            m2= torch.zeros(B)
+            for img in range(B):
+                for concept in range(args.num_concept):
+                    
+                expert_pred = expert_fn_concept(images[img], target_concept[img])
+                if expert_pred == target_concept[img]:
+                    m.append(1)
+                    m2[img] = alpha
+                else:
+                    m.append(0)
+                    m2[img] = 1
+            m = torch.tensor(m).to(device)
+            m2 = torch.tensor(m2).to(device)
+            pred_concept.to(device)
+            target_concept.to(device)
+
+            #Criterion Concept has to be updated to select the new loss function for the concepts
+            loss_concept = criterion_concept(pred_concept, m, target_concept, m2, args.num_concept)
+            loss_iter_dict['concept'] = loss_concept
+
 
             if stage != 'class':
                 loss += loss_concept * loss_weight['concept']
             pred = pred_concept
             loss_iter_dict['concept'] = loss_concept
 
+
+        #CLASS_Loss_Calculation
+
         # expert_pred = copy.deepcopy(target_class)
         if True:
             if 'pred_class_logit' in preds_dict.keys():
                 pred_class = preds_dict['pred_class_logit']
-
             else:
                 assert 'pred_class_prob' in preds_dict.keys()
                 pred_class = preds_dict['pred_class_prob']
                 pred_class = pred_class.log()
 
             pred_class = F.softmax(pred_class, dim=-1)
+
+            #print(target_concept[0])
+            #print(target_class[0])
 
             m = []
             m2= torch.zeros(B)
@@ -492,6 +550,8 @@ def run_epoch_cbm(args, model, data, optimizer, epoch, desc, device, loss_weight
                 
         expert_fn = f
 
+    #Need 2nd expert_fn for concepts
+
     if train:
         model.train()
 
@@ -533,6 +593,10 @@ def run_epoch_cbm(args, model, data, optimizer, epoch, desc, device, loss_weight
         concept_loss = 0
         for i in range(num_concepts):
             concept_loss += torch.nn.CrossEntropyLoss()(concepts[i].squeeze(), target_concept[:, i].float().squeeze())
+       #Where is expert for concepts in the concept loss calculation?
+
+        print(target_concept[0])
+        print(target_class[0])
 
         m = []
         m2= torch.zeros(B)
