@@ -8,6 +8,47 @@ from utils.loss import MCBCELoss
 from mo import CBM
 import copy
 
+def expert_fn_class(featureVector,target_label):
+    if target_label < 100:
+        if torch.rand(1) < 0.8:
+            return target_label
+        else:
+            return 101
+    else:
+        if torch.rand(1) < args.prob:
+            return target_label
+        else:
+            return 99
+    """
+    if target_label < 100:
+        return target_label
+    else:
+        if torch.rand(1) < 0.3:
+            return target_label
+        else:
+            return 99
+    """
+
+def expert_fn_concept(featureVector,target_label):
+    expert_pred = torch.deepcopy(target_label)
+    prob_falsePos = torch.count_nonzero(target_label)/args.num_concepts
+
+    if torch.rand(1) < 0.7:
+        return target_label
+    else: 
+        return torch.zeros_likes(target_label)
+
+    
+    # for i in range(torch.size(target_label)):
+    #     if target_label[i] == 1:
+    #         if torch.rand(1) < 0.7:
+    #             return y
+    #         else:
+    #             return 99
+
+    #         #If correct label is 1 ...expert 0.7 prob to put 1
+    #         #If correct label is 0 ...expert {number of correct labels}/{total number of labels} prob to put 1   
+
 
 def run_epoch_without_deferral(args, model, data, optimizer, epoch, desc, device, loss_weight=None, train=False,  warm=False, inference_with_sampling=False, stage='joint'):
     if train:
@@ -198,42 +239,10 @@ def reject_CrossEntropyLoss(outputs, m, labels, m2, n_classes):
     return torch.sum(outputs) / batch_size
 
 
-def run_epoch(args, model, data, optimizer, epoch, desc, device, loss_weight=None, train=False,  warm=False, inference_with_sampling=False, stage='joint', expert_fn=None):
+def run_epoch(args, model, data, optimizer, epoch, desc, device, loss_weight=None, train=False,  warm=False, inference_with_sampling=False, stage='joint', expert_fn=None):             
 
-
-    def expert_fn_concept(featureVector,target_label):
-        expert_pred = torch.deepcopy(target_label)
-        prob_falsePos = torch.count_nonzero(target_label)/args.num_concepts
-
-        if torch.rand(1) < 0.7:
-            return target_label
-        else: 
-            return torch.zeros_likes(target_label)
-
-       
-        # for i in range(torch.size(target_label)):
-        #     if target_label[i] == 1:
-        #         if torch.rand(1) < 0.7:
-        #             return y
-        #         else:
-        #             return 99
-
-        #         #If correct label is 1 ...expert 0.7 prob to put 1
-        #         #If correct label is 0 ...expert {number of correct labels}/{total number of labels} prob to put 1                
-
-
-
-    if expert_fn is None:
-        def f(x, y):
-            if y < 100:
-                return y
-            else:
-                if torch.rand(1) < 0.3:
-                    return y
-                else:
-                    return 99
-                
-        expert_fn = f
+    if expert_fn is None:      
+        expert_fn = expert_fn_class
 
 
     if train:
@@ -337,6 +346,7 @@ def run_epoch(args, model, data, optimizer, epoch, desc, device, loss_weight=Non
 
         #Concept Loss Calculation
         #For each image, Each concept category will have a loss calculated.
+
         if True:
             if 'pred_concept_logit' in preds_dict.keys():
                 pred_concept = preds_dict['pred_concept_logit']
@@ -344,6 +354,7 @@ def run_epoch(args, model, data, optimizer, epoch, desc, device, loss_weight=Non
                 assert 'pred_concept_prob' in preds_dict.keys()
                 pred_concept = preds_dict['pred_concept_prob']
                 pred_concept = pred_concept.log()
+
 
             m = []
             m2= torch.zeros(B)
@@ -472,17 +483,8 @@ def run_defferal_eval(args, model, data, device, desc, expert_fn=None):
     real_total = 0
     alone_correct = 0
 
-    if expert_fn is None:
-        def f(x, y):
-            if y < 100:
-                return y
-            else:
-                if torch.rand(1) < 0.3:
-                    return y
-                else:
-                    return 99
-                
-        expert_fn = f
+    if expert_fn is None:        
+        expert_fn = expert_fn_class
 
     model.eval()
 
@@ -538,17 +540,8 @@ def run_defferal_eval(args, model, data, device, desc, expert_fn=None):
 
 def run_epoch_cbm(args, model, data, optimizer, epoch, desc, device, loss_weight=None, train=False,  warm=False, inference_with_sampling=False, stage='joint', expert_fn=None):
 
-    if expert_fn is None:
-        def f(x, y):
-            if y < 100:
-                return y
-            else:
-                if torch.rand(1) < 0.3:
-                    return y
-                else:
-                    return 99
-                
-        expert_fn = f
+    if expert_fn is None:          
+        expert_fn = expert_fn_class
 
     #Need 2nd expert_fn for concepts
 
@@ -651,16 +644,7 @@ def run_defferal_eval_cbm(args, model, data, device, desc, expert_fn=None):
     alone_correct = 0
 
     if expert_fn is None:
-        def f(x, y):
-            if y < 100:
-                return y
-            else:
-                if torch.rand(1) < 0.3:
-                    return y
-                else:
-                    return 99
-                
-        expert_fn = f
+        expert_fn = expert_fn_class
 
     model.eval()
 

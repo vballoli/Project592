@@ -177,31 +177,17 @@ for stage in stages:
         ################### Train #################
         warm = True if epoch < args.warm_epochs + 1 else False
 
-        def f(x, y):
-            if y < 100:
-                if torch.rand(1) < 0.8:
-                    return y
-                else:
-                    return 101
-            else:
-                if torch.rand(1) < args.prob:
-                    return y
-                else:
-                    return 99
-                
-        expert_fn = f
-
 
         all_preds, all_targs, all_certs, all_cls_certs, train_loss = run_epoch(args, model, loaders['train'],
                                                     optimizer, epoch, 'Training', device=device, loss_weight=loss_weight,
-                                                    train=True, warm=warm, stage=stage, expert_fn=expert_fn)
+                                                    train=True, warm=warm, stage=stage, expert_fn=None)
         # train_metrics = evaluate.compute_metrics(args, all_preds, all_targs, train_loss['total'], 0)
         # if 'wandb' in args.log_tool:
         #     wandb.log({f'lr_group{idx}': param_group['lr'] for idx, param_group in enumerate(optimizer.param_groups)}, step=epoch)
         #     wandb.log({f'loss_train/{k}_loss': v for k, v in train_loss.items()}, step=epoch)
         #     wandb.log({f'acc/train_{k}': v for k, v in train_metrics.items()}, step=epoch)
 
-        run_defferal_eval(args, model, loaders['test'], device, "Test", expert_fn=expert_fn)
+        run_defferal_eval(args, model, loaders['test'], device, "Test", expert_fn=None)
 
         # ################### Valid #################
         # all_preds, all_targs, all_certs, all_cls_certs, valid_loss = run_epoch(args, model, loaders['val'], None, epoch, 'Validating', device=device, loss_weight=loss_weight, warm=warm)
