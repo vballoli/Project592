@@ -1,4 +1,3 @@
-
 import argparse
 import os
 from os.path import join as ospj
@@ -24,7 +23,7 @@ def change2abspath(path):
 
 def configure_data_type(args):
     if args.dataset == 'cub':
-        args.num_classes = 200
+        args.num_classes = 201
         args.num_concepts = getattr(args, 'num_concepts', 312)
     elif args.dataset == 'awa2':
         args.num_classes = 50
@@ -48,7 +47,7 @@ def configure_data_folder(args):
 
 
 def configure_log_folder(args):
-    log_folder = change2abspath(args.log_dir)
+    log_folder = "logs/"
     if args.only_eval:
         log_folder = args.config.replace(args.config.split('/')[-1], '')
         assert ('config' not in log_folder)
@@ -116,7 +115,7 @@ def configure_config(args):
                 conf_new[k] = getattr(args, k)
         yaml.dump(conf_new, open(os.path.join(args.log_folder, args.config.split('/')[-1]), 'w'), sort_keys=False)
 
-        wandb.save(os.path.join(args.log_folder, args.config.split('/')[-1]))
+        #wandb.save(os.path.join(args.log_folder, args.config.split('/')[-1]))
         
 
 def configure_arguments(args):
@@ -134,6 +133,8 @@ def get_configs():
     parser.add_argument('--gpu', type=int, default=0)
     parser.add_argument('--resume', action='store_true', default=False)
     parser.add_argument('--only_eval', action='store_true', default=False)
+    parser.add_argument('--prob', type=float, default=0.5)
+    parser.add_argument('--alpha', type=float, default=0.5)
 
     flags = parser.parse_args()
 
@@ -185,7 +186,8 @@ def get_configs():
     configure_data_type(args)
     if not DEBUG:
         configure_arguments(args)
-        args.log_folder = configure_log_folder(args)
+        args.log_folder = f"logs/alpha_{args.alpha}_prob_{args.prob}"
+        os.makedirs(args.log_folder, exist_ok=True)
         configure_wandb(args)
         configure_config(args)
 

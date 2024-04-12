@@ -1,3 +1,4 @@
+
 seed: 0
 
 # data
@@ -35,7 +36,7 @@ grad_ac_steps: 1
 clip_grad_max_norm: 1.
 criterion_class: ce
 criterion_concept: bce
-train_class_mode: sequential
+train_class_mode: joint
 
 concept_activation: sigmoid
 
@@ -53,3 +54,8 @@ use_probabilsitic_concept: True
 
 loss_weight_concept: 1.0
 loss_weight_class: 0.1
+
+# Reject
+classifier_cost: 0.
+expert_cost: 0.
+
