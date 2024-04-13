@@ -327,42 +327,42 @@ def run_epoch(args, model, data, optimizer, epoch, desc, device, loss_weight=Non
 
         loss, pred = 0, None
         loss_iter_dict = {}
-        # if args.pred_concept:
-        #     if isinstance(criterion_concept, MCBCELoss):
-        #         pred_concept = preds_dict['pred_concept_prob']
-        #         loss_concept, concept_loss_dict = criterion_concept(\
-        #             probs=preds_dict['pred_concept_prob'],
-        #             image_mean=preds_dict['pred_mean'], image_logsigma=preds_dict['pred_logsigma'],
-        #             concept_labels=target_concept, negative_scale=preds_dict['negative_scale'], shift=preds_dict['shift'])
-        #         if 'pred_concept_uncertainty' in preds_dict.keys():
-        #             concept_uncertainty = preds_dict['pred_concept_uncertainty']
-        #         for k, v in concept_loss_dict.items():
-        #             if k != 'loss':
-        #                 loss_iter_dict['pcme_' + k] = v
-        #     elif isinstance(criterion_concept, (nn.BCELoss)):
-        #         pred_concept = preds_dict['pred_concept_prob']
-        #         loss_concept = criterion_concept(pred_concept, target_concept)
-        #         if 'pred_concept_uncertainty' in preds_dict.keys():
-        #             concept_uncertainty = preds_dict['pred_concept_uncertainty']
-        #     else:
-        #         pred_concept = preds_dict['pred_concept_logit']
-        #         loss_concept = criterion_concept(pred_concept, target_concept)
-        #         pred_concept = torch.sigmoid(pred_concept)
-        #         if 'pred_concept_uncertainty' in preds_dict.keys():
-        #             concept_uncertainty = preds_dict['pred_concept_uncertainty']
+        if args.pred_concept:
+            if isinstance(criterion_concept, MCBCELoss):
+                pred_concept = preds_dict['pred_concept_prob']
+                loss_concept, concept_loss_dict = criterion_concept(\
+                    probs=preds_dict['pred_concept_prob'],
+                    image_mean=preds_dict['pred_mean'], image_logsigma=preds_dict['pred_logsigma'],
+                    concept_labels=target_concept, negative_scale=preds_dict['negative_scale'], shift=preds_dict['shift'])
+                if 'pred_concept_uncertainty' in preds_dict.keys():
+                    concept_uncertainty = preds_dict['pred_concept_uncertainty']
+                for k, v in concept_loss_dict.items():
+                    if k != 'loss':
+                        loss_iter_dict['pcme_' + k] = v
+            elif isinstance(criterion_concept, (nn.BCELoss)):
+                pred_concept = preds_dict['pred_concept_prob']
+                loss_concept = criterion_concept(pred_concept, target_concept)
+                if 'pred_concept_uncertainty' in preds_dict.keys():
+                    concept_uncertainty = preds_dict['pred_concept_uncertainty']
+            else:
+                pred_concept = preds_dict['pred_concept_logit']
+                loss_concept = criterion_concept(pred_concept, target_concept)
+                pred_concept = torch.sigmoid(pred_concept)
+                if 'pred_concept_uncertainty' in preds_dict.keys():
+                    concept_uncertainty = preds_dict['pred_concept_uncertainty']
 
         #Concept Loss Calculation
         #For each image, Each concept category will have a loss calculated.
-
-        if True:
+        if args.pred_concept:
+            """
             if 'pred_concept_logit' in preds_dict.keys():
                 pred_concept = preds_dict['pred_concept_logit']
             else:
                 assert 'pred_concept_prob' in preds_dict.keys()
                 pred_concept = preds_dict['pred_concept_prob']
                 pred_concept = pred_concept.log()
-
-            
+            """
+            pred_concept = F.softmax(pred_concept, dim=-1)
             loss_concept = torch.zeros(args.num_concepts)
             
             for concept in range(args.num_concepts):
@@ -380,13 +380,10 @@ def run_epoch(args, model, data, optimizer, epoch, desc, device, loss_weight=Non
                 m2 = torch.tensor(m2).to(device)
                 pred_concept.to(device)
                 target_concept.to(device)
-                print("con1: ", pred_concept)
-                print("con2: ", target_concept[:, concept])
-                loss_concept[concept] = reject_CrossEntropyLoss(pred_concept[:, concept], m, target_concept[:, concept], m2, args.num_concepts)
-            
+                loss_concept[concept] = reject_CrossEntropyLoss(pred_concept, m, target_concept[:, concept].long(), m2, args.num_concepts)
+            loss_concept = torch.sum(loss_concept) / args.num_concepts
             loss_iter_dict['concept'] = loss_concept
             
-
 
             if stage != 'class':
                 loss += loss_concept * loss_weight['concept']
@@ -424,9 +421,10 @@ def run_epoch(args, model, data, optimizer, epoch, desc, device, loss_weight=Non
             m2 = torch.tensor(m2).to(device)
             pred_class.to(device)
             target_class.to(device)
-            loss_class = criterion_class(pred_class, m, target_class, m2, args.num_classes)
+            loss_class = reject_CrossEntropyLoss(pred_class, m, target_class, m2, args.num_classes)
             loss_iter_dict['class'] = loss_class
-
+            
+            loss_class = loss_class.cpu()
             if stage != 'concept':
                 loss += loss_class * loss_weight['class']
             pred = pred_class if pred is None else torch.cat((pred_concept, pred_class), dim=1)
