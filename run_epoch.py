@@ -8,7 +8,7 @@ from utils.loss import MCBCELoss
 from mo import CBM
 import copy
 
-def expert_fn_class(featureVector,target_label):
+def expert_fn_class(featureVector,target_label, args):
     if target_label < 100:
         if torch.rand(1) < 0.8:
             return target_label
@@ -36,6 +36,7 @@ def expert_fn_concept(featureVector,target_label):
 
     returns: either 0 or 1 (0 for image does not contain concept and 1 for it does)
     """
+    return 1
     expert_pred = torch.deepcopy(target_label)
     prob_falsePos = torch.count_nonzero(target_label)/args.num_concepts
 
@@ -361,9 +362,10 @@ def run_epoch(args, model, data, optimizer, epoch, desc, device, loss_weight=Non
                 pred_concept = preds_dict['pred_concept_prob']
                 pred_concept = pred_concept.log()
 
-
-            loss_concept = torch.zeros(args.num_concept)
-            for concept in range(args.num_concept):
+            
+            loss_concept = torch.zeros(args.num_concepts)
+            
+            for concept in range(args.num_concepts):
                 m = []
                 m2= torch.zeros(B)
                 for img in range(B):
@@ -378,9 +380,12 @@ def run_epoch(args, model, data, optimizer, epoch, desc, device, loss_weight=Non
                 m2 = torch.tensor(m2).to(device)
                 pred_concept.to(device)
                 target_concept.to(device)
-                loss_concept[concept] = reject_CrossEntropyLoss(pred_concept[:, concept], m, target_concept[:, concept], m2, args.num_concept)
+                print("con1: ", pred_concept)
+                print("con2: ", target_concept[:, concept])
+                loss_concept[concept] = reject_CrossEntropyLoss(pred_concept[:, concept], m, target_concept[:, concept], m2, args.num_concepts)
             
             loss_iter_dict['concept'] = loss_concept
+            
 
 
             if stage != 'class':
@@ -408,7 +413,7 @@ def run_epoch(args, model, data, optimizer, epoch, desc, device, loss_weight=Non
             m = []
             m2= torch.zeros(B)
             for j in range(B):
-                expert_pred = expert_fn(images[j], target_class[j])
+                expert_pred = expert_fn(images[j], target_class[j], args)
                 if expert_pred == target_class[j]:
                     m.append(1)
                     m2[j] = alpha
@@ -511,7 +516,7 @@ def run_defferal_eval(args, model, data, device, desc, expert_fn=None):
             pred_class = F.softmax(pred_class, dim=-1)
 
             for i in range(B):
-                expert_pred = expert_fn(images[i], target_class[i])
+                expert_pred = expert_fn(images[i], target_class[i], args)
                 prediction = torch.argmax(pred_class[i])
                 r = (prediction == 200)
 
@@ -586,14 +591,14 @@ def run_epoch_cbm(args, model, data, optimizer, epoch, desc, device, loss_weight
         concepts, preds = model(images)
         preds = F.softmax(preds, dim=-1)
 
-        expert_pred = expert_fn(images, target_class)
+        expert_pred = expert_fn(images, target_class, args)
 
 
         #concept_loss = 0
         #for i in range(num_concepts):
             #concept_loss += torch.nn.CrossEntropyLoss()(concepts[i].squeeze(), target_concept[:, i].float().squeeze())
-        concept_loss = torch.zeros(args.num_concept)
-        for concept in range(args.num_concept):
+        concept_loss = torch.zeros(args.num_concepts)
+        for concept in range(args.num_concepts):
             m = []
             m2= torch.zeros(B)
             for img in range(B):
@@ -608,12 +613,12 @@ def run_epoch_cbm(args, model, data, optimizer, epoch, desc, device, loss_weight
             m2 = torch.tensor(m2).to(device)
             pred_concept.to(device)
             target_concept.to(device)
-            concept_loss[concept] = reject_CrossEntropyLoss(pred_concept[:, concept], m, target_concept[:, concept], m2, args.num_concept)
+            concept_loss[concept] = reject_CrossEntropyLoss(pred_concept[:, concept], m, target_concept[:, concept], m2, args.num_concepts)
 
         m = []
         m2= torch.zeros(B)
         for j in range(B):
-            expert_pred = expert_fn(images[j], target_class[j])
+            expert_pred = expert_fn(images[j], target_class[j], args)
             if expert_pred == target_class[j]:
                 m.append(1)
                 m2[j] = alpha
