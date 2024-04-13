@@ -30,6 +30,12 @@ def expert_fn_class(featureVector,target_label):
     """
 
 def expert_fn_concept(featureVector,target_label):
+    """
+    arguments: featureVector: features for that particular image
+                target_label: either 0 or 1 (the correct label for whether the image contains that concept)
+
+    returns: either 0 or 1 (0 for image does not contain concept and 1 for it does)
+    """
     expert_pred = torch.deepcopy(target_label)
     prob_falsePos = torch.count_nonzero(target_label)/args.num_concepts
 
@@ -356,25 +362,24 @@ def run_epoch(args, model, data, optimizer, epoch, desc, device, loss_weight=Non
                 pred_concept = pred_concept.log()
 
 
-            m = []
-            m2= torch.zeros(B)
-            for img in range(B):
-                for concept in range(args.num_concept):
-                    
-                expert_pred = expert_fn_concept(images[img], target_concept[img])
-                if expert_pred == target_concept[img]:
-                    m.append(1)
-                    m2[img] = alpha
-                else:
-                    m.append(0)
-                    m2[img] = 1
-            m = torch.tensor(m).to(device)
-            m2 = torch.tensor(m2).to(device)
-            pred_concept.to(device)
-            target_concept.to(device)
-
-            #Criterion Concept has to be updated to select the new loss function for the concepts
-            loss_concept = criterion_concept(pred_concept, m, target_concept, m2, args.num_concept)
+            loss_concept = torch.zeros(args.num_concept)
+            for concept in range(args.num_concept):
+                m = []
+                m2= torch.zeros(B)
+                for img in range(B):
+                    expert_pred = expert_fn_concept(images[img], target_concept[img][concept])
+                    if expert_pred == target_concept[img][concept]:
+                        m.append(1)
+                        m2[img] = alpha
+                    else:
+                        m.append(0)
+                        m2[img] = 1
+                m = torch.tensor(m).to(device)
+                m2 = torch.tensor(m2).to(device)
+                pred_concept.to(device)
+                target_concept.to(device)
+                loss_concept[concept] = reject_CrossEntropyLoss(pred_concept[:, concept], m, target_concept[:, concept], m2, args.num_concept)
+            
             loss_iter_dict['concept'] = loss_concept
 
 
@@ -583,13 +588,27 @@ def run_epoch_cbm(args, model, data, optimizer, epoch, desc, device, loss_weight
 
         expert_pred = expert_fn(images, target_class)
 
-        concept_loss = 0
-        for i in range(num_concepts):
-            concept_loss += torch.nn.CrossEntropyLoss()(concepts[i].squeeze(), target_concept[:, i].float().squeeze())
-       #Where is expert for concepts in the concept loss calculation?
 
-        print(target_concept[0])
-        print(target_class[0])
+        #concept_loss = 0
+        #for i in range(num_concepts):
+            #concept_loss += torch.nn.CrossEntropyLoss()(concepts[i].squeeze(), target_concept[:, i].float().squeeze())
+        concept_loss = torch.zeros(args.num_concept)
+        for concept in range(args.num_concept):
+            m = []
+            m2= torch.zeros(B)
+            for img in range(B):
+                expert_pred = expert_fn_concept(images[img], target_concept[img][concept])
+                if expert_pred == target_concept[img][concept]:
+                    m.append(1)
+                    m2[img] = alpha
+                else:
+                    m.append(0)
+                    m2[img] = 1
+            m = torch.tensor(m).to(device)
+            m2 = torch.tensor(m2).to(device)
+            pred_concept.to(device)
+            target_concept.to(device)
+            concept_loss[concept] = reject_CrossEntropyLoss(pred_concept[:, concept], m, target_concept[:, concept], m2, args.num_concept)
 
         m = []
         m2= torch.zeros(B)
