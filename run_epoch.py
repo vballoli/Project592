@@ -29,21 +29,23 @@ def expert_fn_class(featureVector,target_label, args):
             return 99
     """
 
-def expert_fn_concept(featureVector,target_label):
+def expert_fn_concept(featureVector,target_label, args):
     """
     arguments: featureVector: features for that particular image
                 target_label: either 0 or 1 (the correct label for whether the image contains that concept)
 
     returns: either 0 or 1 (0 for image does not contain concept and 1 for it does)
     """
-    return 1
-    expert_pred = torch.deepcopy(target_label)
-    prob_falsePos = torch.count_nonzero(target_label)/args.num_concepts
-
-    if torch.rand(1) < 0.7:
-        return target_label
-    else: 
-        return torch.zeros_likes(target_label)
+    if target_label == 1:
+        if torch.rand(1) < args.prob:
+            return target_label
+        else:
+            return 0
+    else:
+        if torch.rand(1) < args.prob:
+            return target_label
+        else:
+            return 1
 
     
     # for i in range(torch.size(target_label)):
@@ -369,7 +371,7 @@ def run_epoch(args, model, data, optimizer, epoch, desc, device, loss_weight=Non
                 m = []
                 m2= torch.zeros(B)
                 for img in range(B):
-                    expert_pred = expert_fn_concept(images[img], target_concept[img][concept])
+                    expert_pred = expert_fn_concept(images[img], target_concept[img][concept],args)
                     if expert_pred == target_concept[img][concept]:
                         m.append(1)
                         m2[img] = alpha
@@ -600,7 +602,7 @@ def run_epoch_cbm(args, model, data, optimizer, epoch, desc, device, loss_weight
             m = []
             m2= torch.zeros(B)
             for img in range(B):
-                expert_pred = expert_fn_concept(images[img], target_concept[img][concept])
+                expert_pred = expert_fn_concept(images[img], target_concept[img][concept],args)
                 if expert_pred == target_concept[img][concept]:
                     m.append(1)
                     m2[img] = alpha

@@ -14,6 +14,9 @@ from torch.optim import SGD
 
 args = get_configs()
 
+args.log_folder = f"logs/RegCBM_alpha_{args.alpha}_prob_{args.prob}"
+os.makedirs(args.log_folder, exist_ok=True)
+
 print("\n=========================================")
 print("Arguments")
 for arg in vars(args):

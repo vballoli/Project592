@@ -3,7 +3,7 @@ seed: 0
 
 # data
 dataset: cub
-metadataroot: CUB/processed_datasets_Luke
+metadataroot: CUB/processed_datasets
 use_cropped: False
 augmentation: weak
 batch_size: 128

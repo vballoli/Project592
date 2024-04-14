@@ -12,7 +12,7 @@ from run_epoch import run_epoch, run_defferal_eval, run_epoch_cbm
 
 args = get_configs()
 
-args.log_folder = f"logs/alpha_{args.alpha}_prob_{args.prob}"
+args.log_folder = f"logs/ProbCBM_alpha_{args.alpha}_prob_{args.prob}"
 os.makedirs(args.log_folder, exist_ok=True)
 
 print("\n=========================================")
