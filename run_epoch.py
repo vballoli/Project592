@@ -536,11 +536,11 @@ def run_defferal_eval(args, model, data, device, desc, expert_fn=None):
 
                 real_total += 1
 
-    cov = str(total) + str(" out of") + str(real_total)
-    to_print = {"coverage": cov, "system accuracy": 100 * correct_sys / real_total,
-                "expert accuracy": 100 * exp / (exp_total + 0.0002),
+    cov = str(total) + str(" out of ") + str(real_total)
+    to_print = {"coverage": cov, "system accuracy": (100 * correct_sys / real_total).item(),
+                "expert accuracy": (100 * exp / (exp_total + 0.0002)).item(),
                 "classifier accuracy": 100 * correct / (total + 0.0001),
-                "alone classifier": 100 * alone_correct / real_total}
+                "alone classifier": (100 * alone_correct / real_total).item()}
     
     print(to_print)
     return correct, correct_sys, exp, exp_total, total, real_total, alone_correct
@@ -704,7 +704,7 @@ def run_defferal_eval_cbm(args, model, data, device, desc, expert_fn=None):
 
                 alone_correct += prediction == target_class[i]
 
-                expert_pred = expert_fn(images[i], target_class[i])
+                expert_pred = expert_fn(images[i], target_class[i],args)
 
                 if r:
                     exp += expert_pred == target_class[i]
@@ -717,11 +717,10 @@ def run_defferal_eval_cbm(args, model, data, device, desc, expert_fn=None):
 
                 real_total += 1
 
-    cov = str(total) + str(" out of") + str(real_total)
-
-    to_print = {"coverage": cov, "system accuracy": 100 * correct_sys / real_total,
-                "expert accuracy": 100 * exp / (exp_total + 0.0002),
+    cov = str(total) + str(" out of ") + str(real_total)
+    to_print = {"coverage": cov, "system accuracy": (100 * correct_sys / real_total).item(),
+                "expert accuracy": (100 * exp / (exp_total + 0.0002)).item(),
                 "classifier accuracy": 100 * correct / (total + 0.0001),
-                "alone classifier": 100 * alone_correct / real_total}
+                "alone classifier": (100 * alone_correct / real_total).item()}
     
     print(to_print)
