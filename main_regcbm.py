@@ -76,8 +76,8 @@ for stage in stages:
         _, _, _, _, _, _, _, def_results = run_defferal_eval_cbm(args, model, loaders['val'], device, "Eval", None)
 
         import json
-
-        with open(f"./jsons/results_regcbm__{args.alpha}_{args.prob}.json", "w") as f:
+        os.makedirs("jsons/", exist_ok=True)
+        with open(f"jsons/results_regcbm__{args.alpha}_{args.prob}.json", "w") as f:
             json.dump(def_results, f)
 
         if not DEBUG:
