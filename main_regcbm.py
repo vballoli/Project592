@@ -75,7 +75,11 @@ for stage in stages:
 
         run_defferal_eval_cbm(args, model, loaders['val'], device, "Eval", None)
 
-
+        if not DEBUG:
+            torch.save({'epoch': epoch,
+                        'state_dict': model.state_dict(),
+                        'optimizer': optimizer.state_dict()},
+                    os.path.join(args.log_folder, f'alpha_{args.alpha}_prob_{args.prob}.pth'))
 
 # if __name__ == '__main__':
 #     ############## Log and Save ##############
