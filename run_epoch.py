@@ -36,13 +36,14 @@ def expert_fn_concept(featureVector,target_label, args):
 
     returns: either 0 or 1 (0 for image does not contain concept and 1 for it does)
     """
+    #concept_expert_accuracy = 0.5
     if target_label == 1:
-        if torch.rand(1) < args.prob:
+        if torch.rand(1) < (0.5*args.prob):
             return target_label
         else:
             return 0
     else:
-        if torch.rand(1) < args.prob:
+        if torch.rand(1) < (0.5*args.prob):
             return target_label
         else:
             return 1
@@ -580,7 +581,6 @@ def run_epoch_cbm(args, model, data, optimizer, epoch, desc, device, loss_weight
         images = batch['image'].float().to(device)
         target_class = batch['class_label'][:, 0].long().to(device)
         target_concept = batch['concept_label'].float().to(device)
-
         B = images.shape[0]
         
 
@@ -589,10 +589,18 @@ def run_epoch_cbm(args, model, data, optimizer, epoch, desc, device, loss_weight
         loss_iter_dict = {}
 
         concepts, preds = model(images)
-        preds = F.softmax(preds, dim=-1)
+        concepts = torch.cat(concepts,1)
 
-        expert_pred = expert_fn(images, target_class, args)
+        preds = F.softmax(preds, dim=-1) 
+        concepts = F.softmax(concepts, dim=-1)
+        
 
+
+        #expert_pred = expert_fn(images, target_class, args)
+
+        
+        #Concept Loss Calculation
+        #For each image, Each concept category will have a loss calculated.
 
         #concept_loss = 0
         #for i in range(num_concepts):
@@ -611,10 +619,13 @@ def run_epoch_cbm(args, model, data, optimizer, epoch, desc, device, loss_weight
                     m2[img] = 1
             m = torch.tensor(m).to(device)
             m2 = torch.tensor(m2).to(device)
-            pred_concept.to(device)
+            concepts.to(device)
             target_concept.to(device)
-            concept_loss[concept] = reject_CrossEntropyLoss(pred_concept[:, concept], m, target_concept[:, concept], m2, args.num_concepts)
+            concept_loss[concept] = reject_CrossEntropyLoss(concepts, m, target_concept[:, concept].long(), m2, args.num_concepts)
+        concept_loss = torch.sum(concept_loss) / args.num_concepts
 
+
+        #CLASS_Loss_Calculation
         m = []
         m2= torch.zeros(B)
         for j in range(B):

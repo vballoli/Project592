@@ -187,9 +187,9 @@ def get_configs():
     if not DEBUG:
         configure_arguments(args)
         args.log_folder = f"logs/alpha_{args.alpha}_prob_{args.prob}"
-        os.makedirs(args.log_folder, exist_ok=True)
-        configure_wandb(args)
-        configure_config(args)
+        #os.makedirs(args.log_folder, exist_ok=True)
+        #configure_wandb(args)
+        #configure_config(args)
 
     set_random_seed(args.seed)
 
