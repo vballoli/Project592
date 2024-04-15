@@ -29,7 +29,15 @@ def expert_fn_class(featureVector,target_label, args):
             return 99
     """
 
-def expert_fn_concept(featureVector,target_label, args):
+def opposite(label):
+    if label == 1:
+        return 0
+    elif label == 0:
+        return 1
+    else: 
+        assert(False)
+
+def expert_fn_concept(featureVector,target_label, args, concept):
     """
     arguments: featureVector: features for that particular image
                 target_label: either 0 or 1 (the correct label for whether the image contains that concept)
@@ -37,16 +45,16 @@ def expert_fn_concept(featureVector,target_label, args):
     returns: either 0 or 1 (0 for image does not contain concept and 1 for it does)
     """
     #concept_expert_accuracy = 0.5
-    if target_label == 1:
+    if concept < 100:
+        if torch.rand(1) < 0.9:
+            return target_label
+        else:
+            return opposite(target_label)
+    else: 
         if torch.rand(1) < (1.25*args.prob):
             return target_label
         else:
-            return 0
-    else:
-        if torch.rand(1) < (1.25*args.prob):
-            return target_label
-        else:
-            return 1
+            return opposite(target_label)
 
     
     # for i in range(torch.size(target_label)):
@@ -372,7 +380,7 @@ def run_epoch(args, model, data, optimizer, epoch, desc, device, loss_weight=Non
                 m = []
                 m2= torch.zeros(B)
                 for img in range(B):
-                    expert_pred = expert_fn_concept(images[img], target_concept[img][concept],args)
+                    expert_pred = expert_fn_concept(images[img], target_concept[img][concept],args, concept)
                     if expert_pred == target_concept[img][concept]:
                         m.append(1)
                         m2[img] = alpha
@@ -610,7 +618,7 @@ def run_epoch_cbm(args, model, data, optimizer, epoch, desc, device, loss_weight
             m = []
             m2= torch.zeros(B)
             for img in range(B):
-                expert_pred = expert_fn_concept(images[img], target_concept[img][concept],args)
+                expert_pred = expert_fn_concept(images[img], target_concept[img][concept],args, concept)
                 if expert_pred == target_concept[img][concept]:
                     m.append(1)
                     m2[img] = alpha
