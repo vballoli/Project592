@@ -228,8 +228,8 @@ for stage in stages:
         
 
         import json
-
-        with open(f"results_regcbm__{args.alpha}_{args.prob}.json", "w") as f:
+        os.makedirs("jsons/", exist_ok=True)
+        with open(f"jsons/results_probcbm__{args.alpha}_{args.prob}.json", "w") as f:
             json.dump(def_results, f)
 
         if not DEBUG:

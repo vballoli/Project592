@@ -77,7 +77,7 @@ for stage in stages:
 
         import json
 
-        with open(f"results_regcbm__{args.alpha}_{args.prob}.json", "w") as f:
+        with open(f"./jsons/results_regcbm__{args.alpha}_{args.prob}.json", "w") as f:
             json.dump(def_results, f)
 
         if not DEBUG:

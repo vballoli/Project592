@@ -7,3 +7,5 @@
 **/wandb/
 **/logs/
 **/runs/
+**/old_logs/
+**/jsons/
