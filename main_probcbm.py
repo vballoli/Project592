@@ -187,7 +187,7 @@ for stage in stages:
         #     wandb.log({f'loss_train/{k}_loss': v for k, v in train_loss.items()}, step=epoch)
         #     wandb.log({f'acc/train_{k}': v for k, v in train_metrics.items()}, step=epoch)
 
-        run_defferal_eval(args, model, loaders['test'], device, "Test", expert_fn=None)
+        _, _, _, _, _, _, _, def_results = run_defferal_eval(args, model, loaders['test'], device, "Test", expert_fn=None)
 
         # ################### Valid #################
         # all_preds, all_targs, all_certs, all_cls_certs, valid_loss = run_epoch(args, model, loaders['val'], None, epoch, 'Validating', device=device, loss_weight=loss_weight, warm=warm)
@@ -225,6 +225,18 @@ for stage in stages:
             #                 'optimizer': optimizer.state_dict()},
             #                os.path.join(args.log_folder, f'best_checkpoint_{stage}.pth'))
 
+        
+
+        import json
+
+        with open(f"results_regcbm__{args.alpha}_{args.prob}.json", "w") as f:
+            json.dump(def_results, f)
+
+        if not DEBUG:
+            torch.save({'epoch': epoch,
+                        'state_dict': model.state_dict(),
+                        'optimizer': optimizer.state_dict()},
+                    os.path.join(args.log_folder, f'alpha_{args.alpha}_prob_{args.prob}.pth'))
 
 
 if __name__ == '__main__':

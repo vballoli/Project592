@@ -551,7 +551,8 @@ def run_defferal_eval(args, model, data, device, desc, expert_fn=None):
                 "alone classifier": (100 * alone_correct / real_total).item()}
     
     print(to_print)
-    return correct, correct_sys, exp, exp_total, total, real_total, alone_correct
+
+    return correct, correct_sys, exp, exp_total, total, real_total, alone_correct, to_print
 
 
 
@@ -732,3 +733,4 @@ def run_defferal_eval_cbm(args, model, data, device, desc, expert_fn=None):
                 "alone classifier": (100 * alone_correct / real_total).item()}
     
     print(to_print)
+    return correct, correct_sys, exp, exp_total, total, real_total, alone_correct, to_print

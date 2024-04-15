@@ -73,7 +73,12 @@ for stage in stages:
 
         run_epoch_cbm(args, model, loaders['train'], optimizer, epoch, stage, device=device, loss_weight=loss_weight)
 
-        run_defferal_eval_cbm(args, model, loaders['val'], device, "Eval", None)
+        _, _, _, _, _, _, _, def_results = run_defferal_eval_cbm(args, model, loaders['val'], device, "Eval", None)
+
+        import json
+
+        with open(f"results_regcbm__{args.alpha}_{args.prob}.json", "w") as f:
+            json.dump(def_results, f)
 
         if not DEBUG:
             torch.save({'epoch': epoch,
