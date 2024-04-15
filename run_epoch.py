@@ -38,12 +38,12 @@ def expert_fn_concept(featureVector,target_label, args):
     """
     #concept_expert_accuracy = 0.5
     if target_label == 1:
-        if torch.rand(1) < (0.5*args.prob):
+        if torch.rand(1) < (1.25*args.prob):
             return target_label
         else:
             return 0
     else:
-        if torch.rand(1) < (0.5*args.prob):
+        if torch.rand(1) < (1.25*args.prob):
             return target_label
         else:
             return 1
@@ -446,7 +446,7 @@ def run_epoch(args, model, data, optimizer, epoch, desc, device, loss_weight=Non
                 print(k, v)
 
         if train:
-            print("Training")
+            #print("Training")
             optimizer.zero_grad()
             loss_out.backward()
             optimizer.step()
