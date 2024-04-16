@@ -534,7 +534,7 @@ def run_defferal_eval(args, model, data, device, desc, expert_fn=None):
                 alone_correct += prediction == target_class[i]
 
                 if r:
-                    exp += expert_pred == target_class[i]
+                    exp += (expert_pred == target_class[i]).item()
                     correct_sys += (expert_pred == target_class[i]).item()
                     exp_total += 1
                 else:
@@ -546,7 +546,7 @@ def run_defferal_eval(args, model, data, device, desc, expert_fn=None):
 
     cov = str(total) + str(" out of ") + str(real_total)
     to_print = {"coverage": cov, "system accuracy": (100 * correct_sys / real_total),
-                "expert accuracy": (100 * exp / (exp_total + 0.0002)).item(),
+                "expert accuracy": (100 * exp / (exp_total + 0.0002)),
                 "classifier accuracy": 100 * correct / (total + 0.0001),
                 "alone classifier": (100 * alone_correct / real_total).item()}
     
