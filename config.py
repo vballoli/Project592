@@ -135,6 +135,7 @@ def get_configs():
     parser.add_argument('--only_eval', action='store_true', default=False)
     parser.add_argument('--prob', type=float, default=0.5)
     parser.add_argument('--alpha', type=float, default=0.5)
+    parser.add_argument('--nodeferral', action='store_true', default=False)
 
     flags = parser.parse_args()
 

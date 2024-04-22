@@ -8,7 +8,7 @@ from models import *
 from config import DEBUG, get_configs
 import utils.evaluate as evaluate
 from utils.util import get_class, load_saved_model
-from run_epoch import run_epoch, run_defferal_eval, run_epoch_cbm, run_defferal_eval_cbm
+from run_epoch import run_epoch, run_defferal_eval, run_epoch_cbm, run_defferal_eval_cbm, run_epoch_cbm_without_deferral
 from mo import CBM
 from torch.optim import SGD
 
@@ -71,8 +71,10 @@ for stage in stages:
         for param_group in optimizer.param_groups:
             print('LR: {}'.format(param_group['lr']))
 
-        run_epoch_cbm(args, model, loaders['train'], optimizer, epoch, stage, device=device, loss_weight=loss_weight)
-
+        if not args.nodeferral:
+            run_epoch_cbm(args, model, loaders['train'], optimizer, epoch, stage, device=device, loss_weight=loss_weight)
+        else:
+            run_epoch_cbm_without_deferral(args, model, loaders['train'], optimizer, epoch, stage, device=device, loss_weight=loss_weight)
         _, _, _, _, _, _, _, def_results = run_defferal_eval_cbm(args, model, loaders['val'], device, "Eval", None)
 
         import json

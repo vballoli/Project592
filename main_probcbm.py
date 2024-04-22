@@ -8,7 +8,7 @@ from models import *
 from config import DEBUG, get_configs
 import utils.evaluate as evaluate
 from utils.util import get_class, load_saved_model
-from run_epoch import run_epoch, run_defferal_eval, run_epoch_cbm
+from run_epoch import run_epoch, run_epoch_without_deferral, run_defferal_eval, run_epoch_cbm
 
 args = get_configs()
 
@@ -80,7 +80,10 @@ if args.only_eval:
         data_loader = loaders['train']
 
     #Evaluating Model
-    all_preds, all_targs, all_certs, all_cls_certs, test_loss = run_epoch(args, model, loaders['test'], None, 0, 'Testing', device=device, loss_weight=loss_weight)
+    if not args.nodeferral:
+        all_preds, all_targs, all_certs, all_cls_certs, test_loss = run_epoch(args, model, loaders['test'], None, 0, 'Testing', device=device, loss_weight=loss_weight)
+    else: 
+        all_preds, all_targs, all_certs, all_cls_certs, test_loss = run_epoch_without_deferral(args, model, loaders['test'], None, 0, 'Testing', device=device, loss_weight=loss_weight)
     test_metrics = evaluate.compute_metrics(args, all_preds, all_targs, all_certs, all_cls_certs, test_loss['total'], 0)
         
         
@@ -177,10 +180,14 @@ for stage in stages:
         ################### Train #################
         warm = True if epoch < args.warm_epochs + 1 else False
 
-
-        all_preds, all_targs, all_certs, all_cls_certs, train_loss = run_epoch(args, model, loaders['train'],
+        if not args.nodeferral:
+            all_preds, all_targs, all_certs, all_cls_certs, train_loss = run_epoch(args, model, loaders['train'],
                                                     optimizer, epoch, 'Training', device=device, loss_weight=loss_weight,
                                                     train=True, warm=warm, stage=stage, expert_fn=None)
+        else:
+            all_preds, all_targs, all_certs, all_cls_certs, train_loss = run_epoch_without_deferral(args, model, loaders['train'],
+                                                    optimizer, epoch, 'Training', device=device, loss_weight=loss_weight,
+                                                    train=True, warm=warm, stage=stage)
         # train_metrics = evaluate.compute_metrics(args, all_preds, all_targs, train_loss['total'], 0)
         # if 'wandb' in args.log_tool:
         #     wandb.log({f'lr_group{idx}': param_group['lr'] for idx, param_group in enumerate(optimizer.param_groups)}, step=epoch)
@@ -241,7 +248,10 @@ for stage in stages:
 
 if __name__ == '__main__':
     ############## Log and Save ##############
-    all_preds, all_targs, all_certs, all_cls_certs, test_loss = run_epoch(args, model, loaders['test'], None, 0, 'Testing', device=device, loss_weight=loss_weight)
+    if not args.nodeferral:
+        all_preds, all_targs, all_certs, all_cls_certs, test_loss = run_epoch(args, model, loaders['test'], None, 0, 'Testing', device=device, loss_weight=loss_weight)
+    else:
+        all_preds, all_targs, all_certs, all_cls_certs, test_loss = run_epoch_without_deferral(args, model, loaders['test'], None, 0, 'Testing', device=device, loss_weight=loss_weight)
     test_metrics = evaluate.compute_metrics(args, all_preds, all_targs, all_certs, all_cls_certs, test_loss['total'], 0)
     print('Test Acc: ', test_metrics['class_acc'])
     print('Test Loss: ', test_loss['total'])

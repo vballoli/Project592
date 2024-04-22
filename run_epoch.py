@@ -555,7 +555,74 @@ def run_defferal_eval(args, model, data, device, desc, expert_fn=None):
     return correct, correct_sys, exp, exp_total, total, real_total, alone_correct, to_print
 
 
+def run_epoch_cbm_without_deferral(args, model, data, optimizer, epoch, desc, device, loss_weight=None, train=False,  warm=False, inference_with_sampling=False, stage='joint'):
 
+    if train:
+        model.train()
+
+    batch_idx = 0
+    end_idx = 0
+    loss_tot_dict = {'total': 0}
+
+    criterion_class = getattr(args, 'criterion_class', 'ce')
+
+    if criterion_class == 'ce':
+        criterion_class = reject_CrossEntropyLoss
+    else:
+        raise ValueError('Got criterion_class', criterion_class)
+    
+    losses = []
+    class_losses = []
+    concept_losses = []
+
+    alpha = args.alpha
+    
+    for batch in tqdm(data, mininterval=0.5, desc=desc, leave=False, ncols=50):
+        optimizer.zero_grad()
+        images = batch['image'].float().to(device)
+        target_class = batch['class_label'][:, 0].long().to(device)
+        target_concept = batch['concept_label'].float().to(device)
+
+        B = images.shape[0]
+        
+
+        num_concepts = args.num_concepts
+    
+        loss_iter_dict = {}
+
+        concepts, preds = model(images)
+        preds = F.softmax(preds, dim=-1)
+
+        concept_loss = 0
+        for i in range(num_concepts):
+            concept_loss += torch.nn.CrossEntropyLoss()(concepts[i].squeeze(), target_concept[:, i].float().squeeze())
+
+        class_loss = torch.nn.CrossEntropyLoss()(preds, target_class)
+
+
+        loss = class_loss + concept_loss
+        losses.append(loss)
+        concept_losses.append(concept_loss)
+        class_losses.append(class_loss)
+
+        loss_out = loss
+
+        loss_out.backward()
+        optimizer.step()
+        optimizer.zero_grad()
+
+        print(f"Loss: {loss_out.item()} || Class Loss: {class_loss.item()} || Concept Loss: {concept_loss.item()}")
+
+        del images, target_class, target_concept, preds
+
+    # Average loss
+    loss = sum(losses) / len(losses)
+    class_loss = sum(class_losses) / len(class_losses)
+    concept_loss = sum(concept_losses) / len(concept_losses)
+
+    print(f"Epoch {epoch} Loss: {loss.item()} || Epoch Class Loss: {class_loss.item()} || Epoch Concept Loss: {concept_loss.item()}")
+
+    return loss, class_loss, concept_loss
 
 
 def run_epoch_cbm(args, model, data, optimizer, epoch, desc, device, loss_weight=None, train=False,  warm=False, inference_with_sampling=False, stage='joint', expert_fn=None):
@@ -727,10 +794,16 @@ def run_defferal_eval_cbm(args, model, data, device, desc, expert_fn=None):
                 real_total += 1
 
     cov = str(total) + str(" out of ") + str(real_total)
-    to_print = {"coverage": cov, "system accuracy": (100 * correct_sys / real_total),
-                "expert accuracy": (100 * exp / (exp_total + 0.0002)).item(),
+    if exp_total == 0:
+        to_print = {"coverage": cov, "system accuracy": (100 * correct_sys / real_total),
+                "expert accuracy": 0.0,
                 "classifier accuracy": 100 * correct / (total + 0.0001),
                 "alone classifier": (100 * alone_correct / real_total).item()}
+    else:
+        to_print = {"coverage": cov, "system accuracy": (100 * correct_sys / real_total),
+                    "expert accuracy": (100 * exp / (exp_total + 0.0002)).item(),
+                    "classifier accuracy": 100 * correct / (total + 0.0001),
+                    "alone classifier": (100 * alone_correct / real_total).item()}
     
     print(to_print)
     return correct, correct_sys, exp, exp_total, total, real_total, alone_correct, to_print
