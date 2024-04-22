@@ -5,6 +5,10 @@ This code is based on "Probabilistic Concept Bottleneck Models."<br>
 [ArXiv](https://arxiv.org/abs/2306.01574) | [OpenReview](https://openreview.net/forum?id=yOxy3T0d6e)
 Code is publicly available at https://github.com/ejkim47/prob-cbm.
 
+The CUB dataset and processing originates from "Concept Bottleneck Models."<br>
+[Paper](https://proceedings.mlr.press/v119/koh20a.html)
+Code is publicly available at https://github.com/yewsiang/ConceptBottleneck.
+
 Part of code is borrowed from [Evaluating Weakly Supervised Object Localization Methods Right](https://github.com/clovaai/wsolevaluation), [Probabilistic Cross-Modal Embedding](https://github.com/naver-ai/pcme), and [Polysemous Visual-Semantic Embedding (PVSE)](https://github.com/yalesong/pvse).
 
 
@@ -16,7 +20,8 @@ This study aims to explore the following research question: How can two-stage de
 
 ### Step 1. Prepare Dataset
 
-For the dataset (CUB), please refer to the [page](https://github.com/yewsiang/ConceptBottleneck).
+For the dataset (CUB 200 2011), please download from [here](https://www.vision.caltech.edu/datasets/cub_200_2011/).
+Then, from the CUB folder do the following run `data_processing.py` to obtain train/ val/ test splits as well as to extract all relevant task and concept metadata into pickle files. 
 Please change the 'data_root' and 'metadataroot' in a config file.
 
 ### Step 2. Train a model
