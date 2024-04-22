@@ -5,7 +5,7 @@ This code is based on "Probabilistic Concept Bottleneck Models."<br>
 [ArXiv](https://arxiv.org/abs/2306.01574) | [OpenReview](https://openreview.net/forum?id=yOxy3T0d6e)
 Code is publicly available at https://github.com/ejkim47/prob-cbm.
 
-The CUB dataset and processing originates from "Concept Bottleneck Models."<br>
+The CUB dataset processing originates from "Concept Bottleneck Models."<br>
 [Paper](https://proceedings.mlr.press/v119/koh20a.html)
 Code is publicly available at https://github.com/yewsiang/ConceptBottleneck.
 
